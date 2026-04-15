@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>LeadMint | Sell Indian Leads | ₹5 Per Verified Number</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <!-- Firebase SDKs -->
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
+      }
+    }
+  </script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e9edf2 100%);
+      color: #1a2a3a;
+      min-height: 100vh;
+    }
+    .nav {
+      background: white;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .logo {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #0f2b3d, #1e6b5e);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .logo span {
+      background: none;
+      color: #1e6b5e;
+    }
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: #334155;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn {
+      padding: 10px 24px;
+      border-radius: 40px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #0f2b3d;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #1a4b6e;
+      transform: translateY(-2px);
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid #cbd5e1;
+    }
+    .hero {
+      max-width: 1200px;
+      margin: 60px auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+    .hero p {
+      color: #475569;
+      font-size: 18px;
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+    .stats {
+      display: flex;
+      gap: 32px;
+      margin: 32px 0;
+    }
+    .stat-box {
+      background: white;
+      padding: 20px;
+      border-radius: 24px;
+      text-align: center;
+      flex: 1;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .stat-number {
+      font-size: 32px;
+      font-weight: 800;
+      color: #1e6b5e;
+    }
+    .how-it-works {
+      background: white;
+      padding: 60px 24px;
+      text-align: center;
+    }
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
+      max-width: 1000px;
+      margin: 40px auto;
+    }
+    .step {
+      background: #f8fafc;
+      padding: 28px;
+      border-radius: 28px;
+      width: 240px;
+    }
+    .step-icon {
+      font-size: 42px;
+      margin-bottom: 16px;
+    }
+    .auth-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .auth-card {
+      background: white;
+      padding: 36px;
+      border-radius: 32px;
+      width: 400px;
+      max-width: 90%;
+    }
+    .auth-card input {
+      width: 100%;
+      padding: 14px;
+      margin: 12px 0;
+      border: 1px solid #e2e8f0;
+      border-radius: 60px;
+      font-size: 16px;
+    }
+    .error-msg {
+      color: #e53e3e;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    footer {
+      text-align: center;
+      padding: 40px;
+      color: #64748b;
+      font-size: 14px;
+    }
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: 1fr; text-align: center; }
+      .hero h1 { font-size: 36px; }
+      .nav { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="logo">🔥 Lead<span>Mint</span></div>
+  <div class="nav-links">
+    <a onclick="scrollToSection('home')">Home</a>
+    <a onclick="scrollToSection('howitworks')">How It Works</a>
+    <a onclick="scrollToSection('pricing')">Pricing</a>
+    <button class="btn btn-outline" id="loginNavBtn">Login</button>
+    <button class="btn btn-primary" id="signupNavBtn">Sell Leads →</button>
+  </div>
+</nav>
+
+<section class="hero" id="home">
+  <div>
+    <h1>Sell Indian Mobile Numbers<br>Earn <span style="color:#1e6b5e;">₹5 Per Verified Lead</span></h1>
+    <p>Upload PDF, CSV, or screenshots. Our AI verifies real Indian mobile numbers automatically. Get paid instantly to wallet. Minimum withdraw ₹2000.</p>
+    <div class="stats">
+      <div class="stat-box"><div class="stat-number">₹5</div><div>per verified lead</div></div>
+      <div class="stat-box"><div class="stat-number">100</div><div>verified lock before withdraw</div></div>
+      <div class="stat-box"><div class="stat-number">₹2000</div><div>min withdrawal</div></div>
+    </div>
+    <button class="btn btn-primary" id="heroCta" style="padding: 14px 36px; font-size: 18px;">🚀 Start Selling Now</button>
+  </div>
+  <div><img src="https://placehold.co/500x400/e2e8f0/1e6b5e?text=Lead+Verification+Dashboard" style="width:100%; border-radius: 32px;" alt="dashboard preview"></div>
+</section>
+
+<section class="how-it-works" id="howitworks">
+  <h2 style="font-size: 36px; margin-bottom: 16px;">⚡ How It Works</h2>
+  <p style="color:#475569;">Three simple steps to turn contacts into cash</p>
+  <div class="steps">
+    <div class="step"><div class="step-icon">1️⃣</div><h3>Sign Up</h3><p>Create free account in seconds</p></div>
+    <div class="step"><div class="step-icon">2️⃣</div><h3>Upload Leads</h3><p>PDF, CSV, images — our system detects only real Indian numbers</p></div>
+    <div class="step"><div class="step-icon">3️⃣</div><h3>Get ₹5/lead</h3><p>Verified numbers credited automatically → withdraw from ₹2000</p></div>
+  </div>
+</section>
+
+<section style="background: #0f2b3d; color: white; padding: 60px 24px; text-align: center;" id="pricing">
+  <h2 style="font-size: 32px;">💰 Earn More, Withdraw Easily</h2>
+  <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-top: 40px;">
+    <div style="background: #1e3a4d; padding: 24px; border-radius: 28px; width: 260px;"><div style="font-size: 42px;">✅</div><h3>₹5 per lead</h3><p>Each verified Indian number = ₹5 credited</p></div>
+    <div style="background: #1e3a4d; padding: 24px; border-radius: 28px; width: 260px;"><div style="font-size: 42px;">🔒</div><h3>100 leads lock</h3><p>First 100 verified leads unlock withdraw feature</p></div>
+    <div style="background: #1e3a4d; padding: 24px; border-radius: 28px; width: 260px;"><div style="font-size: 42px;">💸</div><h3>₹2000 min withdraw</h3><p>UPI / Bank transfer within 48 hrs</p></div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2025 LeadMint — India's first verified lead exchange. All data stored securely on Telegram + Firebase.</p>
+</footer>
+
+<!-- Auth Modal -->
+<div id="authModal" class="auth-modal">
+  <div class="auth-card">
+    <h2 id="modalTitle">Sign Up</h2>
+    <input type="email" id="authEmail" placeholder="Email address" autocomplete="email">
+    <input type="password" id="authPassword" placeholder="Password (min 6 chars)">
+    <div id="authError" class="error-msg"></div>
+    <button class="btn btn-primary" id="submitAuthBtn" style="width:100%; margin-top:12px;">Continue</button>
+    <p style="margin-top:16px; text-align:center;" id="toggleAuthText">Already have an account? <a href="#" id="toggleAuthLink">Login</a></p>
+    <button class="btn btn-outline" id="closeModalBtn" style="margin-top:12px; width:100%">Close</button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "firebase/app";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDpFohe_piG3MpnpNJDZcGvTqg5tIu3B-I",
+    authDomain: "leadcash-2cb77.firebaseapp.com",
+    projectId: "leadcash-2cb77",
+    storageBucket: "leadcash-2cb77.firebasestorage.app",
+    messagingSenderId: "611052139341",
+    appId: "1:611052139341:web:1c5ea10a24591987827d04"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  let isLoginMode = false;
+  const modal = document.getElementById('authModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const authEmail = document.getElementById('authEmail');
+  const authPassword = document.getElementById('authPassword');
+  const submitBtn = document.getElementById('submitAuthBtn');
+  const toggleLink = document.getElementById('toggleAuthLink');
+  const toggleText = document.getElementById('toggleAuthText');
+  const authError = document.getElementById('authError');
+
+  function showModal(mode) {
+    isLoginMode = (mode === 'login');
+    modalTitle.innerText = isLoginMode ? 'Login' : 'Sign Up';
+    toggleText.innerHTML = isLoginMode ? "Don't have an account? <a href='#' id='toggleAuthLink'>Sign Up</a>" : "Already have an account? <a href='#' id='toggleAuthLink'>Login</a>";
+    authError.innerText = '';
+    authEmail.value = '';
+    authPassword.value = '';
+    modal.style.display = 'flex';
+    document.getElementById('toggleAuthLink').onclick = (e) => {
+      e.preventDefault();
+      showModal(isLoginMode ? 'signup' : 'login');
+    };
+  }
+
+  document.getElementById('loginNavBtn').onclick = () => showModal('login');
+  document.getElementById('signupNavBtn').onclick = () => showModal('signup');
+  document.getElementById('heroCta').onclick = () => showModal('signup');
+  document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
+
+  submitBtn.onclick = async () => {
+    const email = authEmail.value.trim();
+    const password = authPassword.value;
+    if (!email || password.length < 6) {
+      authError.innerText = "Valid email & password (min 6 chars)";
+      return;
+    }
+    try {
+      if (isLoginMode) {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+      }
+      modal.style.display = 'none';
+    } catch (err) {
+      authError.innerText = err.message;
+    }
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // Redirect to dashboard
+      window.location.href = "dashboard.html";
+    }
+  });
+  
+  window.scrollToSection = (id) => {
+    document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+  };
+</script>
+</body>
+</html>
